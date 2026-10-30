@@ -1,0 +1,13 @@
+# Python training environment and raw dataset (never shipped)
+.venv/
+venv/
+data/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# OS / editor
+.DS_Store
+*.log

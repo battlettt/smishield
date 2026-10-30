@@ -1,0 +1,57 @@
+{
+  "dataset": {
+    "name": "SMS Spam Collection v.1 (Almeida & Gómez Hidalgo)",
+    "source": "https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip",
+    "messages": 5574,
+    "ham": 4827,
+    "spam": 747
+  },
+  "split": {
+    "testSize": 0.2,
+    "stratified": true,
+    "seed": 42,
+    "train": 4459,
+    "test": 1115,
+    "testHam": 966,
+    "testSpam": 149
+  },
+  "model": {
+    "features": "TF-IDF word unigrams + bigrams (sublinear tf, l2 norm)",
+    "vocabularySize": 3000,
+    "maxFeatures": 3000,
+    "minDf": 2,
+    "classifier": "LogisticRegression (liblinear, class_weight=balanced)",
+    "C": 10.0,
+    "cvF1": 0.9624,
+    "threshold": 0.5,
+    "sklearnVersion": "1.9.1"
+  },
+  "test": {
+    "positiveClass": "spam",
+    "accuracy": 0.9901,
+    "precision": 0.9792,
+    "recall": 0.9463,
+    "f1": 0.9625,
+    "confusionMatrix": {
+      "labels": [
+        "ham",
+        "spam"
+      ],
+      "rowsAreActual": true,
+      "matrix": [
+        [
+          963,
+          3
+        ],
+        [
+          8,
+          141
+        ]
+      ],
+      "trueNegatives": 963,
+      "falsePositives": 3,
+      "falseNegatives": 8,
+      "truePositives": 141
+    }
+  }
+}

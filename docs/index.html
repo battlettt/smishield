@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>smishield: in-browser SMS smishing &amp; spam detector</title>
+  <meta name="description" content="Paste an SMS and get a spam/smishing verdict with an explanation. Runs entirely in your browser.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>smishield</h1>
+    <p class="tagline">An SMS smishing &amp; spam detector that runs entirely in your browser.</p>
+  </header>
+
+  <main>
+    <section class="privacy" aria-label="Privacy">
+      <strong>Your message never leaves this device.</strong>
+      The model is downloaded once with this page and every message is analysed locally by JavaScript in this tab.
+      Nothing you paste is sent to a server, stored, or logged.
+    </section>
+
+    <section class="card" aria-labelledby="input-heading">
+      <h2 id="input-heading">Check a message</h2>
+      <label for="message">SMS text</label>
+      <textarea id="message" rows="5" placeholder="Paste the text message here…" spellcheck="false"></textarea>
+      <label for="sender">Sender <span class="muted">(optional: number, short code, name or email it came from)</span></label>
+      <input id="sender" type="text" autocomplete="off" placeholder="e.g. 80086, +44 7700 900123, AMAZ0N">
+      <div class="actions">
+        <button id="analyze" type="button" disabled>Analyse</button>
+        <span class="muted">or try:</span>
+        <button type="button" class="secondary" data-example="smishing">Delivery smishing</button>
+        <button type="button" class="secondary" data-example="prize">Prize spam (from dataset)</button>
+        <button type="button" class="secondary" data-example="legit">Ordinary message</button>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite">Loading model…</p>
+    </section>
+
+    <section id="result" class="result" hidden aria-live="polite" aria-labelledby="verdict">
+      <div class="verdict-row">
+        <h2 id="verdict"></h2>
+        <span id="confidence" class="confidence"></span>
+      </div>
+      <div id="meter" class="meter" role="meter" aria-label="Spam probability" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div id="meter-fill" class="meter-fill"></div>
+        <div class="meter-threshold" title="Decision threshold (50%)"></div>
+      </div>
+      <p id="probability" class="muted small"></p>
+      <p id="summary" class="summary"></p>
+
+      <h3>Warning signs found</h3>
+      <ul id="signals" class="signals"></ul>
+
+      <div class="terms">
+        <div>
+          <h3>Words pushing towards spam</h3>
+          <ul id="spam-terms" class="term-list"></ul>
+        </div>
+        <div>
+          <h3>Words pushing towards legitimate</h3>
+          <ul id="ham-terms" class="term-list"></ul>
+        </div>
+      </div>
+      <p class="muted small">
+        The verdict and confidence come from the statistical model. Numbers next to words are their contribution
+        to the model's log-odds (TF-IDF weight × coefficient). The warning signs above are pattern checks that
+        explain common smishing tricks; they do not change the score.
+      </p>
+    </section>
+
+    <section class="card" aria-labelledby="metrics-heading">
+      <h2 id="metrics-heading">How accurate is it?</h2>
+      <table class="metrics">
+        <tbody id="metrics-body"><tr><td class="muted">Loading…</td></tr></tbody>
+      </table>
+      <h3>Confusion matrix (held-out test set)</h3>
+      <table class="cm">
+        <thead><tr><th></th><th scope="col">Predicted legitimate</th><th scope="col">Predicted spam</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Actually legitimate</th><td id="cm-tn">–</td><td id="cm-fp">–</td></tr>
+          <tr><th scope="row">Actually spam</th><td id="cm-fn">–</td><td id="cm-tp">–</td></tr>
+        </tbody>
+      </table>
+      <p id="metrics-note" class="muted small"></p>
+    </section>
+
+    <section class="card caveats" aria-labelledby="caveats-heading">
+      <h2 id="caveats-heading">Limitations: please read</h2>
+      <ul>
+        <li><strong>2012-era data.</strong> The model learned from the SMS Spam Collection, a public dataset of messages
+          collected around 2011–2012. Modern smishing (fake parcel fees, bank &amp; toll alerts, shortened links)
+          looks different, so the model can miss it. The pattern checks help explain those cases but don't change the score.</li>
+        <li><strong>English only.</strong> The training messages are English (mostly UK and Singapore). Other languages
+          will not be scored reliably.</li>
+        <li><strong>A demo and learning project.</strong> It is not a substitute for your carrier's spam filtering or
+          your phone's built-in protections, and a "likely legitimate" result is not a guarantee of safety.</li>
+        <li>If a message asks you to tap a link, pay, or log in, go to the organisation's site or app directly instead.
+          You can report spam texts to your carrier (in the US and UK, forward them to 7726).</li>
+      </ul>
+    </section>
+
+    <section class="card" aria-labelledby="how-heading">
+      <h2 id="how-heading">How it works</h2>
+      <ol>
+        <li>The message is lowercased and split into words. Links, currency symbols and long numbers (phone numbers,
+          short codes) are replaced by placeholder tokens, and adjacent word pairs (bigrams) are added.</li>
+        <li>Each word and pair is weighted by TF-IDF using the vocabulary and IDF values learned during training.</li>
+        <li>A logistic regression model combines the weights into a spam probability; 50% or above is flagged as spam,
+          the same rule used at training time.</li>
+      </ol>
+      <p>The model was trained in Python with scikit-learn and exported to <a href="model.json">model.json</a>;
+        the scoring is reimplemented in plain TypeScript with no machine-learning runtime.
+        Metrics: <a href="metrics.json">metrics.json</a>.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Dataset: T. A. Almeida, J. M. Gómez Hidalgo &amp; A. Yamakami, <em>SMS Spam Collection v.1</em>, UCI Machine Learning Repository.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
